@@ -1,15 +1,14 @@
-import wget
-import os
-homePath = os.path.abspath('.')
+from requests import get
+from os.path import abspath, join
+from os import system, remove
+homePath = abspath('.')
 downloadFrom = [
-    r'http://mc.maryt.world:3513/version.txt',
-    r'http://dovealliance.club:3513/version.txt',
-    r'http://whoisdove.club:3513/version.txt'
+    r'http://mc.maryt.world:3513/',
+    r'http://dovealliance.club:3513/',
+    r'http://whoisdove.club:3513/'
 ]
 updateDownloadFail = False
-tryTime = 0
-# if os.path.exists(filename):
-#         
+tryTime = 0    
 
 def changeDownloadFlag():
     global updateDownloadFail
@@ -27,21 +26,22 @@ def currentVersionNumber(serverVersionList):
 
 for url in downloadFrom:
     try:
-        versionFile = wget.download(url, os.path.join(homePath, 'version.txt'))
+        downloadVersionFile = get((url + 'version.txt'))
+        versionFile = open(join(homePath, 'version.txt'), 'wb').write(downloadVersionFile.content)
     except:
-        print('从'+url+'获取版本列表失败。')
+        print('从'+ url +'获取版本列表失败。')
         tryTime += 1
     else:
         # 读取服务端发来的版本列表
-        serverVersionFile = open(versionFile, 'r')
+        serverVersionFile = open(join(homePath, 'version.txt'), 'r')
         serverVersionList = serverVersionFile.readlines()
         serverVersionFile.close()
-        os.remove(os.path.join(homePath, 'version.txt'))
+        remove(join(homePath, 'version.txt'))
         # 处理版本号列表
         for i in range(len(serverVersionList)):
             serverVersionList[i] = serverVersionList[i].strip()
         # 打开客户端配置文件
-        clientVersionConfig = open(os.path.join(homePath, 'MyUpdateConfig.txt'), 'r')
+        clientVersionConfig = open(join(homePath, 'MyUpdateConfig.txt'), 'r')
         clientVersionText = (clientVersionConfig.readlines())[1]
         for i in range(len(clientVersionText)):
             if clientVersionText[i] == '=':
@@ -49,14 +49,17 @@ for url in downloadFrom:
         clientVersionNumber = clientVersionText[(i + 1) : (len(clientVersionText) - 1)]     
         for i in range(currentVersionNumber(serverVersionList), len(serverVersionList)):
             try:
-                os.system(r'.\wget.exe "mc.maryt.world:3513/'+ serverVersionList[i] +r'.exe"')
-                os.system('.\\'+ serverVersionList[i] +r'.exe')
-                os.remove(os.path.join(homePath, (serverVersionList[i] + '.exe')))
+                # system(r'.\wget.exe "'+ url + serverVersionList[i] +r'.exe"')
+                updatePackage = open(join(homePath, (serverVersionList[i] + '.exe')), 'wb').write(get((url + (serverVersionList[i] + '.exe'))).content)
+                system('.\\'+ serverVersionList[i] +r'.exe')
+                remove(join(homePath, (serverVersionList[i] + '.exe')))
             except:
                 print('从'+ url +'获取更新文件失败。')
                 changeDownloadFlag()
                 break
         print('更新已完成。')
+        system('.\\' + 'start.exe')
         break
 if updateDownloadFail or (tryTime >= len(downloadFrom)):
     print('更新失败，程序将退出。')
+    system("pause")
